@@ -19,7 +19,6 @@ export const deptCrawler: CauCrawler = {
     const html = await httpGet(listUrl);
     // Temporary debug log: first 1000 characters of the fetched HTML.
     // eslint-disable-next-line no-console
-    console.log(html.slice(0, 1000));
     const notices = parseNoticesFromHtml(html, site);
 
     return {
