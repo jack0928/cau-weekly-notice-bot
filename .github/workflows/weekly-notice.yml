@@ -2,7 +2,9 @@ name: Weekly CAU Notices
 
 on:
   schedule:
-    - cron: "0 0 * * 0"
+    # Run every Friday at 9:00 AM KST (00:00 UTC)
+    # KST = UTC+9, so 9:00 KST = 00:00 UTC
+    - cron: "0 0 * * 5"
   workflow_dispatch:
 
 jobs:
@@ -13,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js v20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -21,14 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build --if-present
-
-      - name: Run weekly notice job
+      - name: Run CAU Notice Bot
         env:
-          # TODO: configure required email and other secrets in GitHub repo settings.
-          # EXAMPLE_SMTP_USER: ${{ secrets.EXAMPLE_SMTP_USER }}
-          # EXAMPLE_SMTP_PASS: ${{ secrets.EXAMPLE_SMTP_PASS }}
-          NODE_ENV: production
-        run: node dist/index.js
+          SMTP_USER: ${{ secrets.EMAIL_USER }}
+          SMTP_PASS: ${{ secrets.EMAIL_PASS }}
+          MAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: npm run start
 
