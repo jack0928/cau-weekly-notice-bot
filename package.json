@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:dept": "node --loader ts-node/esm scripts/test-dept-crawler.ts",
     "test:cau": "node --loader ts-node/esm scripts/test-cau-board.ts",
-    "test:date": "node --loader ts-node/esm scripts/test-date-filter.ts"
+    "test:date": "node --loader ts-node/esm scripts/test-date-filter.ts",
+    "test:pipeline": "node --loader ts-node/esm scripts/test-cau-pipeline.ts"
   },
   "keywords": [],
   "author": "",
