@@ -48,7 +48,23 @@ async function main() {
   const site = buildSiteConfig(arg);
   const result = await deptCrawler.crawl(site);
 
-  // Pretty-print the crawl result as JSON.
+  // eslint-disable-next-line no-console
+  console.log(`\n=== Extracted ${result.notices.length} notices from ${arg} ===\n`);
+
+  for (const notice of result.notices) {
+    // eslint-disable-next-line no-console
+    console.log(`Title: ${notice.title}`);
+    // eslint-disable-next-line no-console
+    console.log(`Date: ${notice.publishedAt.toISOString().slice(0, 10)}`);
+    // eslint-disable-next-line no-console
+    console.log(`URL: ${notice.url}`);
+    // eslint-disable-next-line no-console
+    console.log("---");
+  }
+
+  // Also output as JSON for programmatic use
+  // eslint-disable-next-line no-console
+  console.log("\n=== JSON Output ===");
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(result, null, 2));
 }

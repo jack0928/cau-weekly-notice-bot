@@ -19,7 +19,7 @@ export const deptCrawler: CauCrawler = {
     const html = await httpGet(listUrl);
     // Temporary debug log: first 1000 characters of the fetched HTML.
     // eslint-disable-next-line no-console
-    const notices = parseNoticesFromHtml(html, site);
+    const notices = parseNoticesFromHtml(html, site, listUrl);
 
     return {
       sourceId: site.id,
@@ -33,7 +33,7 @@ function buildListUrl(site: SiteConfig): string {
   return new URL(site.listPath, site.baseUrl).toString();
 }
 
-function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
+function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): Notice[] {
   const doc = parseHtml(html) as unknown as {
     querySelectorAll?(selector: string): any[];
   };
@@ -51,16 +51,39 @@ function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
 
   // Temporary debug: log how many items match the configured selector.
   // eslint-disable-next-line no-console
-  console.log(`deptCrawler: found ${Array.isArray(items) ? items.length : 0} items for selector "${itemSelector}"`);
+  console.log(`[${site.id}] Found ${Array.isArray(items) ? items.length : 0} rows for selector "${itemSelector}"`);
 
   const notices: Notice[] = [];
+  let skippedCount = 0;
+  const skipReasons: Record<string, number> = {};
 
   for (const item of items) {
     const element = item as {
       querySelector?(selector: string): any;
       querySelectorAll?(selector: string): any[];
+      tagName?: string;
     };
 
+    // Skip header rows: rows with <th> elements or first cell is exactly "번호"
+    const hasTh = element.querySelector?.("th");
+    if (hasTh) {
+      skippedCount++;
+      skipReasons["header_row"] = (skipReasons["header_row"] || 0) + 1;
+      continue;
+    }
+
+    const firstCell = element.querySelector?.("td:first-child");
+    if (firstCell) {
+      const firstCellText = firstCell.textContent?.toString().trim() ?? "";
+      // "번호" indicates header row, but "공지" is a valid data row indicator
+      if (firstCellText === "번호") {
+        skippedCount++;
+        skipReasons["header_row"] = (skipReasons["header_row"] || 0) + 1;
+        continue;
+      }
+    }
+
+    // Must have a title link in td.aleft a
     const titleEl =
       typeof element.querySelector === "function"
         ? element.querySelector(titleSelector)
@@ -70,6 +93,13 @@ function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
         ? element.querySelector(urlSelector)
         : undefined;
 
+    if (!titleEl || !urlEl) {
+      skippedCount++;
+      skipReasons["no_title_link"] = (skipReasons["no_title_link"] || 0) + 1;
+      continue;
+    }
+
+    // Extract date from td.pc-only cells, preferring YYYY.MM.DD format
     let rawDate: string | undefined;
     if (typeof element.querySelectorAll === "function") {
       const dateCandidates = element.querySelectorAll(dateSelector) as any[];
@@ -78,15 +108,17 @@ function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
           ?.map((c) => c?.textContent?.toString().trim())
           .filter((t: string | undefined): t is string => Boolean(t)) ?? [];
 
-      // Prefer a value that looks like YYYY.MM.DD, but fall back to the first non-empty one.
-      rawDate =
-        texts.find((t) => /^\d{4}\.\d{2}\.\d{2}$/.test(t)) ?? texts[0];
-    } else {
-      const dateEl =
-        typeof element.querySelector === "function"
-          ? element.querySelector(dateSelector)
-          : undefined;
-      rawDate = dateEl?.textContent?.toString().trim();
+      // Prefer a value that looks like YYYY.MM.DD
+      rawDate = texts.find((t) => /^\d{4}\.\d{2}\.\d{2}$/.test(t));
+      
+      // If no date found, try to get from all td cells (fallback)
+      if (!rawDate) {
+        const allCells = element.querySelectorAll?.("td") as any[] ?? [];
+        const cellTexts = allCells
+          .map((c) => c?.textContent?.toString().trim())
+          .filter((t: string | undefined): t is string => Boolean(t));
+        rawDate = cellTexts.find((t) => /^\d{4}\.\d{2}\.\d{2}$/.test(t));
+      }
     }
 
     const rawTitle = titleEl?.textContent?.toString().trim();
@@ -94,13 +126,35 @@ function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
 
     const cleanedTitle = stripNewTagText(rawTitle);
 
-    if (!cleanedTitle || !rawHref || !rawDate) {
-      // Skip incomplete entries rather than failing the whole crawl.
+    if (!cleanedTitle || !rawHref) {
+      skippedCount++;
+      skipReasons["no_title_or_url"] = (skipReasons["no_title_or_url"] || 0) + 1;
       continue;
     }
 
-    const url = new URL(rawHref, site.baseUrl).toString();
+    if (!rawDate) {
+      skippedCount++;
+      skipReasons["no_date"] = (skipReasons["no_date"] || 0) + 1;
+      // eslint-disable-next-line no-console
+      console.log(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - no valid date found`);
+      continue;
+    }
+
+    // Use listUrl as base to correctly resolve query-only hrefs like "?nmode=view..."
+    const url = new URL(rawHref, listUrl).toString();
     const publishedAt = parsePublishedAt(rawDate);
+
+    // Validate parsed date
+    if (!(publishedAt instanceof Date) || isNaN(publishedAt.getTime())) {
+      skippedCount++;
+      skipReasons["invalid_date"] = (skipReasons["invalid_date"] || 0) + 1;
+      // eslint-disable-next-line no-console
+      console.log(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - invalid date: ${rawDate}`);
+      continue;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`  [OK] "${cleanedTitle.substring(0, 50)}..." | ${rawDate}`);
 
     notices.push({
       id: `${site.id}:${url}`,
@@ -109,6 +163,13 @@ function parseNoticesFromHtml(html: string, site: SiteConfig): Notice[] {
       publishedAt,
       source: site.id,
     });
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`[${site.id}] Extracted ${notices.length} notices, skipped ${skippedCount} rows`);
+  if (Object.keys(skipReasons).length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[${site.id}] Skip reasons:`, skipReasons);
   }
 
   return notices;
