@@ -4,7 +4,8 @@ export type NoticeSourceId =
   | "cau_portal"
   | "cau_dept"
   | "cau_grad"
-  | "cau_intl";
+  | "cau_intl"
+  | "cau_sw_edu";
 
 export interface NoticeSource {
   id: NoticeSourceId;
