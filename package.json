@@ -13,6 +13,7 @@
     "test:mail": "node --loader ts-node/esm scripts/test-mail.ts",
     "test:email-template": "node --loader ts-node/esm scripts/test-email-template.ts",
     "test:email-pipeline": "node --loader ts-node/esm scripts/test-email-pipeline.ts",
+    "start": "node --loader ts-node/esm src/app/runCauNoticeBot.ts",
     "start:bot": "node --loader ts-node/esm src/app/runCauNoticeBot.ts",
     "clean:cache": "rm -rf dist .ts-node node_modules/.cache"
   },
