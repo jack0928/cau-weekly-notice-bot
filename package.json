@@ -8,7 +8,8 @@
     "test:dept": "node --loader ts-node/esm scripts/test-dept-crawler.ts",
     "test:cau": "node --loader ts-node/esm scripts/test-cau-board.ts",
     "test:date": "node --loader ts-node/esm scripts/test-date-filter.ts",
-    "test:pipeline": "node --loader ts-node/esm scripts/test-cau-pipeline.ts"
+    "test:pipeline": "node --loader ts-node/esm scripts/test-cau-pipeline.ts",
+    "test:mail": "node --loader ts-node/esm scripts/test-mail.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.2.3",
+    "@types/nodemailer": "^7.0.9",
+    "dotenv": "^17.2.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
