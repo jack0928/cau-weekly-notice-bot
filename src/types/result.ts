@@ -1,6 +1,6 @@
 // Result and error types for jobs and crawlers.
 
-import type { Notice } from "./notice";
+import type { Notice } from "./notice.js";
 
 export interface CrawlResult {
   sourceId: string;

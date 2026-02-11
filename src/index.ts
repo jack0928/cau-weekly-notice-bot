@@ -1,7 +1,7 @@
 // Entrypoint for the weekly notice bot.
 // This will eventually delegate to app.runWeeklyNoticeJob or other jobs.
 
-import { createApp } from "./app";
+import { createApp } from "./app.js";
 
 async function main() {
   const app = createApp();

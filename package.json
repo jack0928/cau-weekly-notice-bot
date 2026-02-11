@@ -1,9 +1,11 @@
 {
   "name": "cau-weekly-notice-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:dept": "node --loader ts-node/esm scripts/test-dept-crawler.ts"
   },
   "keywords": [],
   "author": "",

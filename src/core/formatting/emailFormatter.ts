@@ -1,6 +1,6 @@
 // Responsible for converting notices into email-friendly content.
 
-import type { Notice } from "../../types/notice";
+import type { Notice } from "../../types/notice.js";
 
 export interface FormattedEmail {
   subject: string;

@@ -1,8 +1,8 @@
 // Crawler implementation for CAU international office/global site notices.
 
-import type { CauCrawler } from "./baseCrawler";
-import type { SiteConfig } from "../../types/config";
-import type { CrawlResult } from "../../types/result";
+import type { CauCrawler } from "./baseCrawler.js";
+import type { SiteConfig } from "../../types/config.js";
+import type { CrawlResult } from "../../types/result.js";
 
 export const intlCrawler: CauCrawler = {
   id: "cau_intl",

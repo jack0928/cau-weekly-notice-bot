@@ -1,6 +1,6 @@
 // Configuration types for the weekly notice bot.
 
-import type { NoticeSourceId } from "./notice";
+import type { NoticeSourceId } from "./notice.js";
 
 export interface SiteConfig {
   id: NoticeSourceId;

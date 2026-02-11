@@ -1,8 +1,8 @@
 // Base utilities and shared types for CAU site crawlers.
 // Concrete crawlers for each site will extend or use these helpers.
 
-import type { CrawlResult } from "../../types/result";
-import type { SiteConfig } from "../../types/config";
+import type { CrawlResult } from "../../types/result.js";
+import type { SiteConfig } from "../../types/config.js";
 
 export interface CauCrawler {
   id: string;

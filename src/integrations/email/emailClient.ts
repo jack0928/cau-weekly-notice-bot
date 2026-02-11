@@ -1,6 +1,6 @@
 // Email provider abstraction. Concrete implementation will wrap a library such as nodemailer or an API.
 
-import type { FormattedEmail } from "../../core/formatting/emailFormatter";
+import type { FormattedEmail } from "../../core/formatting/emailFormatter.js";
 
 export interface EmailClient {
   send(message: FormattedEmail): Promise<void>;

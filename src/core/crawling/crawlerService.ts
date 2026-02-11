@@ -1,8 +1,8 @@
 // Service responsible for orchestrating crawling across all configured sites.
 // Implementation will be added later.
 
-import type { CrawlerConfig } from "../../types/config";
-import type { CrawlResult } from "../../types/result";
+import type { CrawlerConfig } from "../../types/config.js";
+import type { CrawlResult } from "../../types/result.js";
 
 export interface SiteCrawler {
   id: string;
