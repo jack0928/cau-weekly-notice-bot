@@ -1,0 +1,26 @@
+{
+  "//": "Placeholder configuration for CAU sites. Fill in actual URLs and paths later.",
+  "sites": [
+    {
+      "id": "cau_portal",
+      "baseUrl": "https://example.cau.ac.kr",
+      "listPath": "/portal/notices"
+    },
+    {
+      "id": "cau_dept",
+      "baseUrl": "https://dept.cau.ac.kr",
+      "listPath": "/notices"
+    },
+    {
+      "id": "cau_grad",
+      "baseUrl": "https://grad.cau.ac.kr",
+      "listPath": "/notices"
+    },
+    {
+      "id": "cau_intl",
+      "baseUrl": "https://intl.cau.ac.kr",
+      "listPath": "/notices"
+    }
+  ]
+}
+

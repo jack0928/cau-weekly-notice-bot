@@ -1,0 +1,9 @@
+{
+  "//": "Non-secret email configuration. Secrets must come from environment variables.",
+  "from": "no-reply@example.com",
+  "to": [
+    "student1@example.com"
+  ],
+  "subjectPrefix": "[CAU Weekly Notices]"
+}
+

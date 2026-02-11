@@ -1,0 +1,26 @@
+{
+  "name": "cau-weekly-notice-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:dept": "node --loader ts-node/esm scripts/test-dept-crawler.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "cheerio": "^1.1.0",
+    "dayjs": "^1.11.19",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "//": "Default app configuration. Override via environment or separate files as needed.",
+  "timezone": "Asia/Seoul",
+  "lookbackDays": 7,
+  "email": {
+    "subjectPrefix": "[CAU Weekly Notices]"
+  }
+}
+
