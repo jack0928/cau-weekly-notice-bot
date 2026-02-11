@@ -9,7 +9,9 @@
     "test:cau": "node --loader ts-node/esm scripts/test-cau-board.ts",
     "test:date": "node --loader ts-node/esm scripts/test-date-filter.ts",
     "test:pipeline": "node --loader ts-node/esm scripts/test-cau-pipeline.ts",
-    "test:mail": "node --loader ts-node/esm scripts/test-mail.ts"
+    "test:mail": "node --loader ts-node/esm scripts/test-mail.ts",
+    "test:email-template": "node --loader ts-node/esm scripts/test-email-template.ts",
+    "test:email-pipeline": "node --loader ts-node/esm scripts/test-email-pipeline.ts"
   },
   "keywords": [],
   "author": "",
