@@ -1,57 +1,45 @@
 // Test runner for the CAU pipeline.
 // Usage: npm run test:pipeline
 
-import { deptCrawler } from "../src/integrations/cau/deptCrawler.js";
-import type { SiteConfig } from "../src/types/config.js";
 import { runCauPipeline } from "../src/core/pipeline/runCauPipeline.js";
 
-const BOARDS = ["sub0501", "sub0502", "sub0506"] as const;
-const BASE_URL = "https://cse.cau.ac.kr";
-
-const boardConfig = {
-  sub0501: { listPath: "/sub05/sub0501.php" },
-  sub0502: { listPath: "/sub05/sub0502.php" },
-  sub0506: { listPath: "/sub05/sub0506.php" },
-};
-
-const sharedSelectors: NonNullable<SiteConfig["selectors"]> = {
-  item: "table.table-basic tr",
-  title: "td.aleft a",
-  url: "td.aleft a",
-  date: "td.pc-only",
-};
-
-function buildSiteConfig(board: typeof BOARDS[number]): SiteConfig {
-  return {
-    id: "cau_dept",
-    baseUrl: BASE_URL,
-    listPath: boardConfig[board].listPath,
-    selectors: sharedSelectors,
-  };
-}
-
 async function main() {
-  // Get merged count before filtering.
-  const crawlResults = await Promise.all(
-    BOARDS.map((board) => deptCrawler.crawl(buildSiteConfig(board)))
-  );
-  const mergedCount = crawlResults.reduce(
-    (sum, result) => sum + (result.notices?.length ?? 0),
-    0
-  );
+  // eslint-disable-next-line no-console
+  console.log("🔍 Testing CAU Pipeline (Dept + SW Edu)...\n");
 
-  // Run the full pipeline (filter + sort).
+  // Run the full pipeline (crawl all sources, merge, filter, sort).
   const filteredNotices = await runCauPipeline();
 
   // eslint-disable-next-line no-console
-  console.log("Total merged count:", mergedCount);
+  console.log("\n=== Pipeline Results ===");
   // eslint-disable-next-line no-console
-  console.log("Count after 7-day filter:", filteredNotices.length);
+  console.log(`Final count (after 7-day filter): ${filteredNotices.length}\n`);
+
+  // Group notices by source
+  const bySource = filteredNotices.reduce((acc, notice) => {
+    const source = notice.source;
+    if (!acc[source]) {
+      acc[source] = [];
+    }
+    acc[source].push(notice);
+    return acc;
+  }, {} as Record<string, typeof filteredNotices>);
+
   // eslint-disable-next-line no-console
-  console.log("Titles:");
-  for (const notice of filteredNotices) {
+  console.log("=== Breakdown by Source ===");
+  for (const [source, notices] of Object.entries(bySource)) {
     // eslint-disable-next-line no-console
-    console.log(`  - ${notice.title}`);
+    console.log(`${source}: ${notices.length} notices`);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log("\n=== Recent Notices (sorted by date, latest first) ===");
+  for (const notice of filteredNotices) {
+    const dateStr = notice.publishedAt instanceof Date 
+      ? notice.publishedAt.toISOString().slice(0, 10)
+      : "Invalid Date";
+    // eslint-disable-next-line no-console
+    console.log(`[${notice.source}] ${dateStr} - ${notice.title.substring(0, 60)}...`);
   }
 }
 
