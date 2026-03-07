@@ -10,7 +10,7 @@ import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
 import { info, error } from "../utils/logger.js";
-import { recipients } from "../../config/recipients.js";
+import { loadRecipients } from "../../config/loadRecipients.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
 
@@ -98,6 +98,14 @@ async function main() {
     }
 
     const email = buildUnifiedNoticeEmail(recent);
+
+    // Load recipients from env var or local config file
+    const recipients = await loadRecipients();
+    
+    if (recipients.length === 0) {
+      error("❌ No recipients configured. Cannot send email.");
+      process.exit(1);
+    }
 
     await sendMail(recipients, email.subject, email.html);
 

@@ -181,6 +181,8 @@ email-preview.html
 *.log
 .ts-node/
 
-# Local recipient overrides
+# Recipient files (use RECIPIENTS_JSON env var instead)
+config/recipients.ts
+config/recipients.js
 config/recipients.local.ts
 config/recipients.local.js
