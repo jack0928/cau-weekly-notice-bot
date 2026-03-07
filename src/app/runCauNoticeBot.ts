@@ -10,6 +10,7 @@ import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
 import { info, error } from "../utils/logger.js";
+import { loadRecipients } from "../config/loadRecipients.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
 
@@ -96,11 +97,23 @@ async function main() {
       return;
     }
 
+    // Load recipients from env var or local config file
+    const recipients = await loadRecipients();
+    
+    if (recipients.length === 0) {
+      error("❌ No recipients configured.");
+      error("Please set RECIPIENTS_JSON environment variable or create config/recipients.ts");
+      error("Example: RECIPIENTS_JSON='[{\"name\":\"User\",\"email\":\"user@example.com\"}]'");
+      process.exit(1);
+    }
+
+    info(`📧 Preparing email for ${recipients.length} recipient(s)...`);
+
     const email = buildUnifiedNoticeEmail(recent);
 
-    await sendMail(email.subject, email.html);
+    await sendMail(recipients, email.subject, email.html);
 
-    info("✅ Email sent successfully.");
+    info(`✅ Email sent to ${recipients.length} recipient(s) via BCC.`);
   } catch (err) {
     error("❌ Error running CAU notice bot:", err);
     process.exit(1);

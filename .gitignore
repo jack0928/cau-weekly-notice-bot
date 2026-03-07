@@ -180,3 +180,9 @@ dist
 email-preview.html
 *.log
 .ts-node/
+
+# Recipient files (use RECIPIENTS_JSON env var instead)
+src/config/recipients.ts
+src/config/recipients.js
+src/config/recipients.local.ts
+src/config/recipients.local.js
