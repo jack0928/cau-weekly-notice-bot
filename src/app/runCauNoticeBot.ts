@@ -97,15 +97,19 @@ async function main() {
       return;
     }
 
-    const email = buildUnifiedNoticeEmail(recent);
-
     // Load recipients from env var or local config file
     const recipients = await loadRecipients();
     
     if (recipients.length === 0) {
-      error("❌ No recipients configured. Cannot send email.");
+      error("❌ No recipients configured.");
+      error("Please set RECIPIENTS_JSON environment variable or create config/recipients.ts");
+      error("Example: RECIPIENTS_JSON='[{\"name\":\"User\",\"email\":\"user@example.com\"}]'");
       process.exit(1);
     }
+
+    info(`📧 Preparing email for ${recipients.length} recipient(s)...`);
+
+    const email = buildUnifiedNoticeEmail(recent);
 
     await sendMail(recipients, email.subject, email.html);
 
