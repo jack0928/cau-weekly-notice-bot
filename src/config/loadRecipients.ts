@@ -20,20 +20,24 @@ export async function loadRecipients(): Promise<Recipient[]> {
   }
 
   // Fallback to local file (for development)
-  console.log("📋 Attempting to load recipients from local config/recipients.ts");
+  // Use dynamic import with explicit path to avoid TypeScript compilation issues
+  console.log("📋 Attempting to load recipients from local src/config/recipients.ts");
   try {
-    const localRecipients = await import("./recipients.js");
-    if (localRecipients.recipients && Array.isArray(localRecipients.recipients)) {
+    // Use full URL-based import to bypass TypeScript checking
+    const recipientsPath = new URL("./recipients.js", import.meta.url);
+    const localRecipients = await import(recipientsPath.href).catch(() => null);
+    
+    if (localRecipients?.recipients && Array.isArray(localRecipients.recipients)) {
       console.log(`✅ Loaded ${localRecipients.recipients.length} recipient(s) from local file`);
       return localRecipients.recipients;
     }
   } catch (err) {
-    console.error("❌ Failed to load config/recipients.ts:", err);
+    console.log("ℹ️ Local config file not found (this is normal in GitHub Actions)");
   }
 
   console.error("\n❌ No recipients found!");
   console.error("Please either:");
   console.error("  1. Set RECIPIENTS_JSON environment variable (for GitHub Actions)");
-  console.error("  2. Create config/recipients.ts file (for local development)");
+  console.error("  2. Create src/config/recipients.ts file (for local development)");
   return [];
 }
