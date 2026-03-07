@@ -180,3 +180,7 @@ dist
 email-preview.html
 *.log
 .ts-node/
+
+# Local recipient overrides
+config/recipients.local.ts
+config/recipients.local.js

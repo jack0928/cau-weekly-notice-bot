@@ -10,6 +10,7 @@ import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
 import { info, error } from "../utils/logger.js";
+import { recipients } from "../../config/recipients.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
 
@@ -98,9 +99,9 @@ async function main() {
 
     const email = buildUnifiedNoticeEmail(recent);
 
-    await sendMail(email.subject, email.html);
+    await sendMail(recipients, email.subject, email.html);
 
-    info("✅ Email sent successfully.");
+    info(`✅ Email sent to ${recipients.length} recipient(s) via BCC.`);
   } catch (err) {
     error("❌ Error running CAU notice bot:", err);
     process.exit(1);
