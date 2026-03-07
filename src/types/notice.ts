@@ -1,10 +1,7 @@
 // Shared types representing notices and their sources.
 
 export type NoticeSourceId =
-  | "cau_portal"
   | "cau_dept"
-  | "cau_grad"
-  | "cau_intl"
   | "cau_sw_edu";
 
 export interface NoticeSource {
