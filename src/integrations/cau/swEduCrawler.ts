@@ -11,6 +11,7 @@ import type { CrawlResult } from "../../types/result.js";
 import type { Notice } from "../../types/notice.js";
 import { httpGet } from "../../utils/http.js";
 import { parseHtml } from "../../utils/html.js";
+import { debug, info } from "../../utils/logger.js";
 
 export const swEduCrawler: CauCrawler = {
   id: "cau_sw_edu",
@@ -47,9 +48,7 @@ function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): 
       ? doc.querySelectorAll(itemSelector)
       : [];
 
-  // Debug: log how many items match the configured selector.
-  // eslint-disable-next-line no-console
-  console.log(`[${site.id}] Found ${Array.isArray(items) ? items.length : 0} rows for selector "${itemSelector}"`);
+  debug(`[${site.id}] Found ${Array.isArray(items) ? items.length : 0} rows for selector "${itemSelector}"`);
 
   const notices: Notice[] = [];
   let skippedCount = 0;
@@ -115,16 +114,14 @@ function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): 
     if (!cleanedTitle || !rawHref) {
       skippedCount++;
       skipReasons["no_title_or_url"] = (skipReasons["no_title_or_url"] || 0) + 1;
-      // eslint-disable-next-line no-console
-      console.log(`  [SKIP] no_title_or_url`);
+      debug(`  [SKIP] no_title_or_url`);
       continue;
     }
 
     if (!rawDate) {
       skippedCount++;
       skipReasons["no_date"] = (skipReasons["no_date"] || 0) + 1;
-      // eslint-disable-next-line no-console
-      console.log(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - no valid date found`);
+      debug(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - no valid date found`);
       continue;
     }
 
@@ -137,8 +134,7 @@ function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): 
     if (!(publishedAt instanceof Date) || isNaN(publishedAt.getTime())) {
       skippedCount++;
       skipReasons["invalid_date"] = (skipReasons["invalid_date"] || 0) + 1;
-      // eslint-disable-next-line no-console
-      console.log(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - invalid date: ${rawDate}`);
+      debug(`  [SKIP] "${cleanedTitle.substring(0, 50)}..." - invalid date: ${rawDate}`);
       continue;
     }
 
@@ -146,9 +142,7 @@ function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): 
     const boardId = extractBoardId(url);
     const noticeId = boardId ? `${site.id}:${boardId}` : `${site.id}:${url}`;
 
-    // Debug: log extracted notice with title, date, and URL
-    // eslint-disable-next-line no-console
-    console.log(`  [OK] "${cleanedTitle.substring(0, 50)}..." | ${rawDate} | ${url}`);
+    debug(`  [OK] "${cleanedTitle.substring(0, 50)}..." | ${rawDate} | ${url}`);
 
     notices.push({
       id: noticeId,
@@ -159,11 +153,9 @@ function parseNoticesFromHtml(html: string, site: SiteConfig, listUrl: string): 
     });
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`[${site.id}] Extracted ${notices.length} notices, skipped ${skippedCount} rows`);
+  info(`[${site.id}] Extracted ${notices.length} notices, skipped ${skippedCount} rows`);
   if (Object.keys(skipReasons).length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`[${site.id}] Skip reasons:`, skipReasons);
+    debug(`[${site.id}] Skip reasons:`, skipReasons);
   }
 
   return notices;

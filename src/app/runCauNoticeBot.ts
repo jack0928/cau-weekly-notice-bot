@@ -9,6 +9,7 @@ import type { Notice } from "../types/notice.js";
 import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
+import { info, error } from "../utils/logger.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
 
@@ -55,9 +56,7 @@ function buildSwEduSiteConfig(): SiteConfig {
 
 async function main() {
   try {
-    // 1. Crawl dept boards (sub0501, sub0502, sub0506)
-    // eslint-disable-next-line no-console
-    console.log("📚 Crawling Department boards...");
+    info("📚 Crawling Department boards...");
     
     const deptNotices: Notice[] = [];
     for (const board of boards) {
@@ -68,12 +67,9 @@ async function main() {
       }
     }
 
-    // eslint-disable-next-line no-console
-    console.log(`✅ Dept count: ${deptNotices.length}`);
+    info(`✅ Dept count: ${deptNotices.length}`);
 
-    // 2. Crawl SW Education Institute
-    // eslint-disable-next-line no-console
-    console.log("🎓 Crawling SW Education Institute...");
+    info("🎓 Crawling SW Education Institute...");
     const swEduSite = buildSwEduSiteConfig();
     const swEduResult = await swEduCrawler.crawl(swEduSite);
 
@@ -82,42 +78,31 @@ async function main() {
       swEduNotices.push(...swEduResult.notices);
     }
 
-    // eslint-disable-next-line no-console
-    console.log(`✅ SW Edu count: ${swEduNotices.length}`);
+    info(`✅ SW Edu count: ${swEduNotices.length}`);
 
-    // 3. Merge all notices from both sources
     const allNotices: Notice[] = [
       ...deptNotices,
       ...swEduNotices,
     ];
 
-    // eslint-disable-next-line no-console
-    console.log(`📊 Total merged count: ${allNotices.length}`);
+    info(`📊 Total merged count: ${allNotices.length}`);
 
-    // 4. Apply 7-day filter
     const recent = filterRecentNotices(allNotices, 7);
 
-    // eslint-disable-next-line no-console
-    console.log(`📅 Filtered count (7 days): ${recent.length}`);
+    info(`📅 Filtered count (7 days): ${recent.length}`);
 
-    // 5. Exit if no recent notices
     if (recent.length === 0) {
-      // eslint-disable-next-line no-console
-      console.log("No recent notices found. Exiting without sending email.");
+      info("No recent notices found. Exiting without sending email.");
       return;
     }
 
-    // 6. Build email with both dept and SW Edu notices
     const email = buildUnifiedNoticeEmail(recent);
 
-    // 7. Send email
     await sendMail(email.subject, email.html);
 
-    // eslint-disable-next-line no-console
-    console.log("✅ Email sent successfully.");
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("❌ Error running CAU notice bot:", error);
+    info("✅ Email sent successfully.");
+  } catch (err) {
+    error("❌ Error running CAU notice bot:", err);
     process.exit(1);
   }
 }

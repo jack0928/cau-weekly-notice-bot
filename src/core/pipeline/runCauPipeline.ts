@@ -5,6 +5,7 @@ import { swEduCrawler } from "../../integrations/cau/swEduCrawler.js";
 import type { SiteConfig } from "../../types/config.js";
 import type { Notice } from "../../types/notice.js";
 import { filterRecentNotices } from "../filters/dateFilter.js";
+import { debug, info } from "../../utils/logger.js";
 
 const BOARDS = ["sub0501", "sub0502", "sub0506"] as const;
 
@@ -81,14 +82,12 @@ export async function runCauPipeline(): Promise<Notice[]> {
     allNotices.push(...swEduResult.notices);
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`[Pipeline] Total merged count: ${allNotices.length}`);
+  info(`[Pipeline] Total merged count: ${allNotices.length}`);
 
   // Apply 7-day filter AFTER merging all sources.
   const filtered = filterRecentNotices(allNotices, 7);
 
-  // eslint-disable-next-line no-console
-  console.log(`[Pipeline] Count after 7-day filter: ${filtered.length}`);
+  info(`[Pipeline] Count after 7-day filter: ${filtered.length}`);
 
   // Sort by publishedAt descending (latest first).
   const sorted = [...filtered].sort((a, b) => {

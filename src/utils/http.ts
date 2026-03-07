@@ -1,5 +1,7 @@
 // HTTP helper utilities (e.g., wrappers around fetch/axios).
 
+import { debug } from "./logger.js";
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
@@ -32,8 +34,7 @@ export async function httpGet(url: string): Promise<string> {
         throw new Error(`HTTP GET failed after ${MAX_RETRIES} attempts for ${url}: ${lastError.message}`);
       }
 
-      // eslint-disable-next-line no-console
-      console.log(`  [RETRY] Attempt ${attempt + 1}/${MAX_RETRIES} failed for ${url}, retrying in ${RETRY_DELAY_MS}ms...`);
+      debug(`  [RETRY] Attempt ${attempt + 1}/${MAX_RETRIES} failed for ${url}, retrying in ${RETRY_DELAY_MS}ms...`);
 
       // Wait before retrying
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));

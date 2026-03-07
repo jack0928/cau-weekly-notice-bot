@@ -1,4 +1,5 @@
 import type { Notice } from "../../../types/notice.js";
+import { debug, warn } from "../../../utils/logger.js";
 
 type BoardId = "sub0501" | "sub0502" | "sub0506";
 
@@ -43,12 +44,9 @@ function detectBoardId(notice: Notice): BoardId {
 export function buildUnifiedNoticeEmail(
   notices: Notice[]
 ): { subject: string; html: string } {
-  // eslint-disable-next-line no-console
-  console.log("\n=== EMAIL BUILD DEBUG ===");
-  // eslint-disable-next-line no-console
-  console.log("TOTAL INPUT:", notices.length);
-  // eslint-disable-next-line no-console
-  console.log("BY SOURCE:",
+  debug("\n=== EMAIL BUILD DEBUG ===");
+  debug("TOTAL INPUT:", notices.length);
+  debug("BY SOURCE:",
     notices.reduce((acc, n) => {
       acc[n.source] = (acc[n.source] ?? 0) + 1;
       return acc;
@@ -70,10 +68,8 @@ export function buildUnifiedNoticeEmail(
   const deptNotices = notices.filter((n) => n.source === "cau_dept");
   const swEduNotices = notices.filter((n) => n.source === "cau_sw_edu");
 
-  // eslint-disable-next-line no-console
-  console.log("DEPT NOTICES:", deptNotices.length);
-  // eslint-disable-next-line no-console
-  console.log("SW EDU NOTICES:", swEduNotices.length);
+  debug("DEPT NOTICES:", deptNotices.length);
+  debug("SW EDU NOTICES:", swEduNotices.length);
 
   // ============================================================
   // Step 2: Build dept sections (grouped by board)
@@ -85,8 +81,7 @@ export function buildUnifiedNoticeEmail(
       (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
     );
 
-    // eslint-disable-next-line no-console
-    console.log("DEPT AFTER SORT:", sortedDept.length);
+    debug("DEPT AFTER SORT:", sortedDept.length);
 
     // Group by board
     const deptGrouped: Record<BoardId, Notice[]> = {
@@ -98,14 +93,12 @@ export function buildUnifiedNoticeEmail(
     for (const notice of sortedDept) {
       const boardId = detectBoardId(notice);
       if (!notice.url.includes("bbs05") && !notice.url.includes("bbs07") && !notice.url.includes("bbs06")) {
-        // eslint-disable-next-line no-console
-        console.warn("  [WARN] Unknown board for URL:", notice.url, "→ defaulting to sub0501");
+        warn("  [WARN] Unknown board for URL:", notice.url, "→ defaulting to sub0501");
       }
       deptGrouped[boardId].push(notice);
     }
 
-    // eslint-disable-next-line no-console
-    console.log("DEPT GROUPED RESULT:",
+    debug("DEPT GROUPED RESULT:",
       Object.fromEntries(
         Object.entries(deptGrouped).map(([k, v]) => [k, v.length])
       )
@@ -155,8 +148,7 @@ export function buildUnifiedNoticeEmail(
       (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
     );
 
-    // eslint-disable-next-line no-console
-    console.log("SW EDU AFTER SORT:", sortedSwEdu.length);
+    debug("SW EDU AFTER SORT:", sortedSwEdu.length);
 
     const swEduItems = sortedSwEdu
       .map(
