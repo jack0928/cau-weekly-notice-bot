@@ -182,7 +182,7 @@ email-preview.html
 .ts-node/
 
 # Recipient files (use RECIPIENTS_JSON env var instead)
-config/recipients.ts
-config/recipients.js
-config/recipients.local.ts
-config/recipients.local.js
+src/config/recipients.ts
+src/config/recipients.js
+src/config/recipients.local.ts
+src/config/recipients.local.js

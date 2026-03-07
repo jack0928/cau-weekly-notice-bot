@@ -10,7 +10,7 @@ import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
 import { info, error } from "../utils/logger.js";
-import { loadRecipients } from "../../config/loadRecipients.js";
+import { loadRecipients } from "../config/loadRecipients.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
 

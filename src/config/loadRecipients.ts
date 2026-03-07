@@ -1,6 +1,6 @@
 // Load recipients from environment variable or local file.
 
-import type { Recipient } from "../src/types/recipient.js";
+import type { Recipient } from "../types/recipient.js";
 
 export async function loadRecipients(): Promise<Recipient[]> {
   // Try environment variable first (for GitHub Actions)

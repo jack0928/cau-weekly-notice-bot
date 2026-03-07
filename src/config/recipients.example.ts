@@ -8,7 +8,7 @@
 //   Use RECIPIENTS_JSON environment variable instead
 //   Format: [{"name":"홍길동","email":"hong@example.com"},{"name":"김철수","email":"kim@example.com"}]
 
-import type { Recipient } from "../src/types/recipient.js";
+import type { Recipient } from "../types/recipient.js";
 
 export const recipients: Recipient[] = [
   { name: "Example User 1", email: "user1@example.com" },
