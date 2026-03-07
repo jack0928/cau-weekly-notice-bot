@@ -12,11 +12,14 @@ cau-weekly-notice-bot/
 ├── src/
 │   ├── app/
 │   │   └── runCauNoticeBot.ts       # Main production entrypoint
+│   ├── config/
+│   │   ├── loadRecipients.ts        # Recipient loader (env var / local file)
+│   │   └── recipients.example.ts    # Example recipients config
 │   ├── core/
 │   │   ├── filters/
 │   │   │   └── dateFilter.ts        # 7-day notice filtering logic
 │   │   ├── mail/
-│   │   │   └── mailSender.ts        # SMTP email sender (Nodemailer)
+│   │   │   └── mailSender.ts        # SMTP email sender (Nodemailer, BCC)
 │   │   └── pipeline/
 │   │       └── runCauPipeline.ts    # Orchestrates crawling + filtering
 │   ├── integrations/
@@ -32,6 +35,7 @@ cau-weekly-notice-bot/
 │   ├── types/
 │   │   ├── config.ts                # SiteConfig interface
 │   │   ├── notice.ts                # Notice interface & NoticeSourceId
+│   │   ├── recipient.ts             # Recipient interface (name, email)
 │   │   └── result.ts                # CrawlResult interface
 │   └── utils/
 │       ├── html.ts                  # HTML parsing (Cheerio wrapper)
@@ -45,7 +49,7 @@ cau-weekly-notice-bot/
 │   └── weekly-notice.yml            # Weekly cron job (Fridays 9:00 AM KST)
 ├── package.json                     # Dependencies & npm scripts
 ├── tsconfig.json                    # TypeScript configuration (ESM)
-└── .env                             # Local secrets (SMTP_USER, SMTP_PASS, MAIL_TO)
+└── .env                             # Local secrets (SMTP_USER, SMTP_PASS)
 ```
 
 ## Data Flow
@@ -104,9 +108,19 @@ cau-weekly-notice-bot/
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 6. Send Email via SMTP                                      │
-│    - sendMail(subject, html)                                │
+│ 6. Load Recipients                                          │
+│    - loadRecipients()                                       │
+│    - Try RECIPIENTS_JSON env var first                      │
+│    - Fallback to src/config/recipients.ts                   │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 7. Send Email via SMTP (BCC)                                │
+│    - sendMail(recipients, subject, html)                    │
 │    - Gmail SMTP with credentials from env                   │
+│    - BCC: All recipients (privacy protected)                │
+│    - TO: Bot itself                                         │
 │    - Auto-generate plain text fallback                      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -165,26 +179,64 @@ interface CauCrawler {
 - `info()`, `warn()`, `error()`: Always log (production)
 - Used throughout crawlers, filters, and pipeline
 
+### Recipient Management (`src/config/`)
+
+**loadRecipients.ts**:
+- `loadRecipients()`: Loads recipients from env var or local file
+- Priority: `RECIPIENTS_JSON` env var → `src/config/recipients.ts` file
+- Returns `Recipient[]` (name, email pairs)
+
+**recipients.example.ts**:
+- Example configuration file
+- Copy to `recipients.ts` for local development
+- Git-ignored to protect privacy
+
 ## Environment Variables
 
 Required for production (GitHub Actions Secrets):
 
 - `SMTP_USER`: Gmail account for sending
 - `SMTP_PASS`: Gmail app password
-- `MAIL_TO`: Recipient email address
+- `RECIPIENTS_JSON`: JSON array of recipients (see format below)
 
 Optional:
 
 - `DEBUG=true`: Enables verbose debug logging
 
+### RECIPIENTS_JSON Format
+
+GitHub Secret value (single line, no spaces):
+```json
+[{"name":"홍길동","email":"hong@cau.ac.kr"},{"name":"김철수","email":"kim@cau.ac.kr"}]
+```
+
+### Local Development
+
+Create `src/config/recipients.ts` (git-ignored):
+```typescript
+import type { Recipient } from "../types/recipient.js";
+
+export const recipients: Recipient[] = [
+  { name: "Local Test", email: "test@example.com" },
+];
+```
+
 ## GitHub Actions Workflow
 
 `.github/workflows/weekly-notice.yml`:
 
-- **Schedule**: `cron: "0 0 * * 5"` (Fridays 00:00 UTC = 09:00 KST)
+- **Schedule**: `cron: "0 23 * * 4"` (Thursdays 23:00 UTC = Fridays 08:00 KST)
 - **Manual trigger**: `workflow_dispatch`
 - **Execution**: `npm run start` → runs `src/app/runCauNoticeBot.ts`
-- **Secrets**: Injects `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_TO`
+- **Secrets**: Injects `EMAIL_USER`, `EMAIL_PASS`, `RECIPIENTS_JSON`
+
+### Multiple Recipients (BCC)
+
+- All recipients receive email via BCC
+- Recipients don't see each other's addresses
+- Single email transmission (fast, efficient)
+- No personalization (all receive identical content)
+- `name` field used for management/identification only
 
 ## Testing
 
