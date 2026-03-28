@@ -9,7 +9,7 @@ import type { Notice } from "../types/notice.js";
 import { filterRecentNotices } from "../core/filters/dateFilter.js";
 import { buildUnifiedNoticeEmail } from "../integrations/email/templates/cauNoticeTemplate.js";
 import { sendMail } from "../core/mail/mailSender.js";
-import { info, error } from "../utils/logger.js";
+import { info, warn, error } from "../utils/logger.js";
 import { loadRecipients } from "../config/loadRecipients.js";
 
 const boards = ["sub0501", "sub0502", "sub0506"] as const;
@@ -37,6 +37,9 @@ const swEduSelectors: NonNullable<SiteConfig["selectors"]> = {
   date: "td",
 };
 
+const PIPELINE_MAX_RETRIES = 3;
+const PIPELINE_RETRY_DELAY_MS = 3000;
+
 function buildSiteConfig(board: typeof boards[number]): SiteConfig {
   return {
     id: "cau_dept",
@@ -55,36 +58,80 @@ function buildSwEduSiteConfig(): SiteConfig {
   };
 }
 
-async function main() {
-  try {
-    info("📚 Crawling Department boards...");
-    
-    const deptNotices: Notice[] = [];
-    for (const board of boards) {
+type CrawlAttemptResult = {
+  notices: Notice[];
+  successSources: string[];
+  failedSources: string[];
+};
+
+async function crawlAllSourcesOnce(): Promise<CrawlAttemptResult> {
+  const notices: Notice[] = [];
+  const successSources: string[] = [];
+  const failedSources: string[] = [];
+
+  info("📚 Crawling Department boards...");
+  for (const board of boards) {
+    try {
       const site = buildSiteConfig(board);
       const result = await deptCrawler.crawl(site);
       if (result.notices && Array.isArray(result.notices)) {
-        deptNotices.push(...result.notices);
+        notices.push(...result.notices);
+      }
+      successSources.push(`cau_dept:${board}`);
+    } catch (err) {
+      failedSources.push(`cau_dept:${board}`);
+      warn(`⚠️ Crawl failed for cau_dept:${board}`, err);
+    }
+  }
+
+  info("🎓 Crawling SW Education Institute...");
+  try {
+    const swEduSite = buildSwEduSiteConfig();
+    const swEduResult = await swEduCrawler.crawl(swEduSite);
+    if (swEduResult.notices && Array.isArray(swEduResult.notices)) {
+      notices.push(...swEduResult.notices);
+    }
+    successSources.push("cau_sw_edu");
+  } catch (err) {
+    failedSources.push("cau_sw_edu");
+    warn("⚠️ Crawl failed for cau_sw_edu", err);
+  }
+
+  return { notices, successSources, failedSources };
+}
+
+async function main() {
+  try {
+    let allNotices: Notice[] = [];
+    let successSources: string[] = [];
+    let failedSources: string[] = [];
+
+    for (let attempt = 1; attempt <= PIPELINE_MAX_RETRIES; attempt++) {
+      const result = await crawlAllSourcesOnce();
+      allNotices = result.notices;
+      successSources = result.successSources;
+      failedSources = result.failedSources;
+
+      if (successSources.length > 0) {
+        break;
+      }
+
+      if (attempt < PIPELINE_MAX_RETRIES) {
+        warn(
+          `⚠️ All sources failed on attempt ${attempt}/${PIPELINE_MAX_RETRIES}. Retrying in ${PIPELINE_RETRY_DELAY_MS}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, PIPELINE_RETRY_DELAY_MS));
       }
     }
 
-    info(`✅ Dept count: ${deptNotices.length}`);
-
-    info("🎓 Crawling SW Education Institute...");
-    const swEduSite = buildSwEduSiteConfig();
-    const swEduResult = await swEduCrawler.crawl(swEduSite);
-
-    const swEduNotices: Notice[] = [];
-    if (swEduResult.notices && Array.isArray(swEduResult.notices)) {
-      swEduNotices.push(...swEduResult.notices);
+    if (successSources.length === 0) {
+      throw new Error(`All crawl sources failed after ${PIPELINE_MAX_RETRIES} attempts`);
     }
 
-    info(`✅ SW Edu count: ${swEduNotices.length}`);
-
-    const allNotices: Notice[] = [
-      ...deptNotices,
-      ...swEduNotices,
-    ];
+    info(`✅ Successful sources: ${successSources.length}`);
+    if (failedSources.length > 0) {
+      warn(`⚠️ Failed sources: ${failedSources.join(", ")}`);
+    }
 
     info(`📊 Total merged count: ${allNotices.length}`);
 
