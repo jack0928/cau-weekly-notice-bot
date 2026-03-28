@@ -41,8 +41,38 @@ function detectBoardId(notice: Notice): BoardId {
   return "sub0501";
 }
 
+/** Human-readable label for crawl source ids used in runCauNoticeBot (e.g. cau_dept:sub0501). */
+function formatFailedCrawlSource(id: string): string {
+  if (id === "cau_sw_edu") return "SW교육원 · 공지사항";
+  const m = /^cau_dept:(sub0501|sub0502|sub0506)$/.exec(id);
+  if (m) {
+    const bid = m[1] as BoardId;
+    return `소프트웨어학부 · ${BOARD_TITLES[bid]}`;
+  }
+  return id;
+}
+
+function buildCrawlFailureBanner(failedCrawlSources: string[]): string {
+  if (!failedCrawlSources.length) return "";
+  const items = failedCrawlSources
+    .map((id) => `<li style="margin-bottom:4px;">${formatFailedCrawlSource(id)}</li>`)
+    .join("");
+  return `
+      <div style="border:1px solid #f59e0b;background:#fffbeb;padding:12px 16px;margin:0 0 16px;border-radius:6px;">
+        <p style="margin:0 0 8px;font-weight:bold;color:#92400e;">⚠️ 일부 게시판 크롤링 실패</p>
+        <p style="margin:0;color:#78350f;font-size:14px;line-height:1.5;">
+          아래 소스는 이번 주간 수집에서 가져오지 못했습니다. (사이트 일시 장애 등) 성공한 게시판의 공지만 포함되어 있습니다.
+        </p>
+        <ul style="margin:10px 0 0 18px;padding:0;color:#78350f;font-size:14px;">
+          ${items}
+        </ul>
+      </div>
+    `;
+}
+
 export function buildUnifiedNoticeEmail(
-  notices: Notice[]
+  notices: Notice[],
+  failedCrawlSources?: string[]
 ): { subject: string; html: string } {
   debug("\n=== EMAIL BUILD DEBUG ===");
   debug("TOTAL INPUT:", notices.length);
@@ -177,9 +207,14 @@ export function buildUnifiedNoticeEmail(
   // ============================================================
   // Step 4: Build final HTML
   // ============================================================
+  const failureBanner = buildCrawlFailureBanner(failedCrawlSources ?? []);
+  const subjectSuffix =
+    failedCrawlSources && failedCrawlSources.length > 0 ? " (일부 수집 실패)" : "";
+
   const html = `
     <div style="font-family:Arial, sans-serif; line-height:1.6;">
       <h2>📬 중앙대학교 공지 통합 리포트</h2>
+      ${failureBanner}
       <p>최근 7일간 총 <strong>${totalCount}건</strong>의 공지가 등록되었습니다.</p>
       ${deptHtml}
       ${swEduHtml}
@@ -191,7 +226,7 @@ export function buildUnifiedNoticeEmail(
   `;
 
   return {
-    subject: `[CAU Notice Bot] 최근 7일간 공지 ${totalCount}건`,
+    subject: `[CAU Notice Bot] 최근 7일간 공지 ${totalCount}건${subjectSuffix}`,
     html,
   };
 }

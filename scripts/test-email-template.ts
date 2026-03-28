@@ -81,6 +81,22 @@ async function main() {
   writeFileSync("./email-preview.html", result.html, "utf-8");
   // eslint-disable-next-line no-console
   console.log("\n✅ HTML written to email-preview.html");
+
+  // Partial crawl failure preview: only boards that “succeeded” + failure banner
+  const mockAfterPartialFailure = mockNotices.filter(
+    (n) =>
+      n.source === "cau_sw_edu" ||
+      (n.source === "cau_dept" && n.url.includes("bbs05"))
+  );
+  const partialResult = buildUnifiedNoticeEmail(mockAfterPartialFailure, [
+    "cau_dept:sub0502",
+    "cau_dept:sub0506",
+  ]);
+  writeFileSync("./email-preview-partial-failure.html", partialResult.html, "utf-8");
+  // eslint-disable-next-line no-console
+  console.log("✅ Partial-failure preview → email-preview-partial-failure.html");
+  // eslint-disable-next-line no-console
+  console.log("   Subject:", partialResult.subject);
   // eslint-disable-next-line no-console
   console.log(`\n📊 Mock data summary:`);
   // eslint-disable-next-line no-console

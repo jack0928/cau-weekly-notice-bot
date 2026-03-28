@@ -156,7 +156,10 @@ async function main() {
 
     info(`📧 Preparing email for ${recipients.length} recipient(s)...`);
 
-    const email = buildUnifiedNoticeEmail(recent);
+    const email = buildUnifiedNoticeEmail(
+      recent,
+      failedSources.length > 0 ? failedSources : undefined
+    );
 
     await sendMail(recipients, email.subject, email.html);
 
